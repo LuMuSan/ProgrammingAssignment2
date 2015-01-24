@@ -1,30 +1,47 @@
-## Put comments here that give an overall description of what your
-## functions do
-
 ## makeCacheMatrix constructs a CacheMatrix Object.
 ## CacheMatrix can store a matrix and the inverse of it.
+
+## I started out copying the cacheVector example, modifing it to my needs.
 
 makeCacheMatrix <- function(x = matrix()) {
     ## construction, set inv to NULL
     inv <- NULL
-    ## set a new matrix
     set <- function(y) {
+        ## set the main member of this object
         ## save the matrix
         x <<- y
         ## clear the cached inverse
         inv <<- NULL
         message("set was called")
     }
-    ## get the matrix
     get <- function() x
-    ## set the inverse of the matrix, just save it
-    ## maybe we should at least check the dimensions ...
-    setinv <- function(inv) inv <<- inv
-    ## simply return the value of inv
-    getinv <- function() inv
+        ## return the matrix, that's all
+    
+    setinv <- function(inv) {
+        ## set the inverse of the matrix, just save it
+        ## this allows to set any matrix in the cache. I don't like it.
+        ## maybe one should at least check the dimensions ...
+        ## or much better put the caching logic in here and make it private.
+        ## actually this function doesn't make any sense to me.
+        inv <<- inv
+    }
+    getinv <- function(...) {
+        ## getinv check wether the matrix has allready been inverted
+        ## if so, simply return the value of inv
+        ## otherwise calculate inv using the solve function, store the 
+        ## result for further calls, and then return it.
+        if(!is.null(inv)) {
+            ## the has allready been calculated, 
+            message("getting cached data")
+            ## we're done
+            return(inv)
+        }
+        inv <<- solve(x, ...)
+        inv
+    }
     ## create the 'interface', i.e. a list of publicly available functions
-    list(set = set, get = get,
-         setinv = setinv,
+    list(set = set, 
+         get = get,
          getinv = getinv)
 }
 
@@ -32,20 +49,7 @@ makeCacheMatrix <- function(x = matrix()) {
 ## cacheSolve takes a CacheMatrix Object and returns the inverse of it data
 cacheSolve <- function(x, ...) {
     ## get the 'inverse' member of x    
-    i <- x$getinv()
-    if(!is.null(i)) {
-        ## the has allready been calculated, 
-        message("getting cached data")
-        ## we're done
-        return(i)
-    }
-    ## the cache was empty, so we have to calculate the inverse
-    ## from the data stored in x
-    i <- NULL
-    i <- solve(x$get(), ...)
-    ## now store the result in the cache, for future use
-    x$setinv(i)
-    ## and don't forget to return the result
+    i <- x$getinv(...)
     i
 }
 
@@ -79,4 +83,11 @@ runTest <- function(){
     } else { 
         print ("we have a problem ...")
     }
+    print('=======================')
+    ## this one is not invertable:
+    f$set(matrix(1:9,3,3))
+    print("setting non invertible matrix, and try to solve it ...")
+    print(cacheSolve(f))
+    print('=======================')
+    
 }
